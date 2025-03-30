@@ -1,0 +1,50 @@
+# Core Dependencies
+Flask==3.0.2
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Flask-Migrate==4.0.5
+Flask-RESTful==0.3.10
+Flask-CORS==4.0.0
+Flask-JWT-Extended==4.6.0
+
+# Database
+SQLAlchemy==2.0.27
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# API & External Services
+requests==2.31.0
+python-dotenv==1.0.1
+easyocr==1.7.1
+twilio==8.12.0
+gunicorn==21.2.0
+
+# Security
+bcrypt==4.1.2
+PyJWT==2.8.0
+cryptography==42.0.2
+
+# Utils
+python-dateutil==2.8.2
+pytz==2024.1
+Pillow==10.2.0
+pandas==2.2.1
+numpy==1.26.4
+
+# Testing
+pytest==8.0.2
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+coverage==7.4.1
+
+# Development
+black==24.2.0
+flake8==7.0.0
+mypy==1.8.0
+isort==5.13.2
+pre-commit==3.6.2
+
+# Documentation
+Sphinx==7.2.6
+sphinx-rtd-theme==2.0.0 

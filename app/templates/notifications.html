@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Expiry Tracker{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Notifications</h1>
+
+        {% if notifications %}
+            <div class="space-y-4">
+                {% for notification in notifications %}
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                {% if notification.priority == 'high' %}
+                                    <span class="text-red-500 text-2xl">⚠️</span>
+                                {% elif notification.priority == 'normal' %}
+                                    <span class="text-yellow-500 text-2xl">🔔</span>
+                                {% else %}
+                                    <span class="text-blue-500 text-2xl">ℹ️</span>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <p class="text-sm text-gray-900">{{ notification.message }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                            {% if not notification.read %}
+                                <form method="POST" action="{{ url_for('main.mark_notification_read', notification_id=notification.id) }}" class="ml-4">
+                                    <button type="submit" class="text-sm text-blue-600 hover:text-blue-500">
+                                        Mark as Read
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-gray-500">No notifications to display.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

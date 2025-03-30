@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Tracker - Never Miss an Expiry Date{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6">Track Your Inventory's Expiry Dates with Ease</h1>
+            <p class="text-xl mb-8">Never miss an expiry date again. Get notified before your items expire and manage your inventory efficiently.</p>
+            <div class="space-x-4">
+                <a href="{{ url_for('auth.register') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition duration-300">Get Started</a>
+                <a href="{{ url_for('auth.login') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition duration-300">Login</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Why Choose Expiry Tracker?</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="text-blue-600 text-4xl mb-4">🔔</div>
+                <h3 class="text-xl font-semibold mb-3">Smart Notifications</h3>
+                <p class="text-gray-600">Get notified before your items expire through email, SMS, or in-app notifications.</p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="text-blue-600 text-4xl mb-4">📱</div>
+                <h3 class="text-xl font-semibold mb-3">Easy Management</h3>
+                <p class="text-gray-600">Track your inventory with a user-friendly interface and powerful management tools.</p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="text-blue-600 text-4xl mb-4">🔄</div>
+                <h3 class="text-xl font-semibold mb-3">Zoho Integration</h3>
+                <p class="text-gray-600">Seamlessly sync your inventory with Zoho for enhanced business management.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+        <div class="grid md:grid-cols-4 gap-8">
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600 mb-2">1</div>
+                <h3 class="font-semibold mb-2">Sign Up</h3>
+                <p class="text-gray-600">Create your account in minutes</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600 mb-2">2</div>
+                <h3 class="font-semibold mb-2">Add Items</h3>
+                <p class="text-gray-600">Add your inventory items</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600 mb-2">3</div>
+                <h3 class="font-semibold mb-2">Set Expiry</h3>
+                <p class="text-gray-600">Set expiry dates for items</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600 mb-2">4</div>
+                <h3 class="font-semibold mb-2">Get Notified</h3>
+                <p class="text-gray-600">Receive timely notifications</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-blue-600 text-white py-16">
+    <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold mb-6">Ready to Get Started?</h2>
+        <p class="text-xl mb-8">Join thousands of users who trust Expiry Tracker to manage their inventory.</p>
+        <a href="{{ url_for('auth.register') }}" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition duration-300">Create Your Account</a>
+    </div>
+</section>
+{% endblock %} 

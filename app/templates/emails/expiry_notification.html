@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .high {
+            background-color: #FEE2E2;
+            border: 1px solid #FCA5A5;
+        }
+        .normal {
+            background-color: #FEF3C7;
+            border: 1px solid #FCD34D;
+        }
+        .low {
+            background-color: #DBEAFE;
+            border: 1px solid #93C5FD;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Expiry Alert</h2>
+        <p>Hello {{ user.username }},</p>
+        <div class="alert {% if days_until_expiry <= 3 %}high{% elif days_until_expiry <= 7 %}normal{% else %}low{% endif %}">
+            <p><strong>{{ item_name }}</strong> will expire in {{ days_until_expiry }} days.</p>
+        </div>
+        <p>Please check your inventory and take necessary action.</p>
+        <p>Best regards,<br>Expiry Tracker Team</p>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .summary {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .high-priority {
+            background-color: #fff3f3;
+            border-left-color: #dc3545;
+        }
+        .normal-priority {
+            background-color: #fff9e6;
+            border-left-color: #ffc107;
+        }
+        .low-priority {
+            background-color: #f8f9fa;
+            border-left-color: #6c757d;
+        }
+        .expired-section {
+            margin-bottom: 20px;
+        }
+        .expired-header {
+            color: #dc3545;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .expiring-header {
+            color: #28a745;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Daily Inventory Alert</h2>
+            <p>Hello {{ user.username }},</p>
+            <p>Here's your daily summary of items that need attention:</p>
+        </div>
+
+        <div class="summary">
+            <h3>Summary</h3>
+            <p>You have {{ items|length }} items that need attention:</p>
+            <ul>
+                <li>Expired Items: {{ items|selectattr('days_until_expiry', 'equalto', 0)|list|length }}</li>
+                <li>High Priority: {{ items|selectattr('priority', 'equalto', 'high')|list|length }}</li>
+                <li>Normal Priority: {{ items|selectattr('priority', 'equalto', 'normal')|list|length }}</li>
+                <li>Low Priority: {{ items|selectattr('priority', 'equalto', 'low')|list|length }}</li>
+            </ul>
+        </div>
+
+        {% if items|selectattr('days_until_expiry', 'equalto', 0)|list %}
+        <div class="expired-section">
+            <div class="expired-header">⚠️ Expired Items</div>
+            {% for item in items if item.days_until_expiry == 0 %}
+            <div class="alert high-priority">
+                <strong>{{ item.name }}</strong><br>
+                This item has expired today!
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if items|selectattr('days_until_expiry', 'greaterthan', 0)|list %}
+        <div class="expiring-section">
+            <div class="expiring-header">📅 Items Approaching Expiry</div>
+            {% for item in items if item.days_until_expiry > 0 %}
+            <div class="alert {{ item.priority }}-priority">
+                <strong>{{ item.name }}</strong><br>
+                Expires in {{ item.days_until_expiry }} days
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>Please check your inventory to take necessary action.</p>
+            <p>You can view and manage your inventory at <a href="{{ url_for('main.index', _external=True) }}">your dashboard</a>.</p>
+        </div>
+    </div>
+</body>
+</html> 
