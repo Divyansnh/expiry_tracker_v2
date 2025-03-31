@@ -222,6 +222,6 @@ class NotificationService:
         
         if notification:
             notification.status = 'read'
-            notification.save()
+            db.session.commit()
             return True
         return False 

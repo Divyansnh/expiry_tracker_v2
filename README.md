@@ -139,4 +139,40 @@ flask db upgrade
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Testing
+
+The application uses pytest for testing. To run the tests:
+
+```bash
+# Install test dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_email_service.py
+
+# Run tests with coverage report
+pytest --cov=app tests/
+```
+
+## Utility Scripts
+
+The `scripts` directory contains utility scripts for various tasks:
+
+### Check Users
+To view information about registered users:
+```bash
+python scripts/check_users.py
+```
+
+### Test Email
+To test the email notification system:
+```bash
+python scripts/test_email.py
+```
+
+Note: Make sure your email configuration is properly set up in the `.env` file before running email-related scripts. 

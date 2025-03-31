@@ -83,14 +83,23 @@ class Item(BaseModel):
         """Check if item is expired."""
         if not self.expiry_date:
             return False
-        return self.days_until_expiry <= 0
+        current_date = datetime.now().date()
+        # Convert expiry_date to date if it's a datetime
+        expiry_date = self.expiry_date.date() if isinstance(self.expiry_date, datetime) else self.expiry_date
+        is_expired = expiry_date <= current_date
+        return is_expired
     
     @property
     def is_near_expiry(self):
         """Check if item is near expiry (within 30 days)."""
         if not self.expiry_date:
             return False
-        return 0 < self.days_until_expiry <= 30
+        current_date = datetime.now().date()
+        # Convert expiry_date to date if it's a datetime
+        expiry_date = self.expiry_date.date() if isinstance(self.expiry_date, datetime) else self.expiry_date
+        days = (expiry_date - current_date).days
+        is_near = 0 < days <= 30
+        return is_near
     
     def set_discount(self, percentage):
         """Set discounted price based on percentage."""
@@ -191,9 +200,12 @@ class Item(BaseModel):
             return
             
         current_date = datetime.now().date()
-        days_until_expiry = (self.expiry_date - current_date).days
+        # Convert expiry_date to date if it's a datetime
+        expiry_date = self.expiry_date.date() if isinstance(self.expiry_date, datetime) else self.expiry_date
+        days_until_expiry = (expiry_date - current_date).days
         
-        if days_until_expiry < 0:
+        old_status = self.status
+        if days_until_expiry <= 0:
             self.status = 'Expired'
             # Create notification for expired item
             from app.models.notification import Notification
@@ -202,9 +214,16 @@ class Item(BaseModel):
                 message=f"Item '{self.name}' (ID: {self.id}) has expired and will be removed from the system tomorrow."
             )
             db.session.add(notification)
+            
+            # Update status in Zoho if item is synced
+            if self.zoho_item_id:
+                from app.services.zoho_service import ZohoService
+                zoho_service = ZohoService()
+                zoho_service.update_item_status_in_zoho(self.zoho_item_id, 'inactive')
         elif days_until_expiry <= 30:
             self.status = 'Expiring Soon'
         else:
             self.status = 'Active'
             
-        db.session.commit() 
+        if old_status != self.status:
+            db.session.commit() 

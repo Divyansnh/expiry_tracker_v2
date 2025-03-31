@@ -26,15 +26,22 @@ def dashboard():
         
         # Get user's inventory items
         items = Item.query.filter_by(user_id=current_user.id).all()
+        current_app.logger.info(f"Found {len(items)} total items for user {current_user.id}")
         
-        # Get expiring and expired items
-        current_date = datetime.now().date()
-        expiring_items = [
-            item for item in items 
-            if item.expiry_date and 
-            0 < (item.expiry_date.date() - current_date).days <= 30
-        ]
+        # Update status for all items
+        for item in items:
+            item.update_status()
+            current_app.logger.info(f"Item {item.name} (ID: {item.id}): status={item.status}, expiry_date={item.expiry_date}, days_until_expiry={item.days_until_expiry}")
+        
+        # Get expiring and expired items using model properties
+        expiring_items = [item for item in items if item.is_near_expiry]
         expired_items = [item for item in items if item.is_expired]
+        
+        current_app.logger.info(f"Dashboard counts - Expiring: {len(expiring_items)}, Expired: {len(expired_items)}")
+        for item in expiring_items:
+            current_app.logger.info(f"Expiring item: {item.name} (ID: {item.id}), days until expiry: {item.days_until_expiry}")
+        for item in expired_items:
+            current_app.logger.info(f"Expired item: {item.name} (ID: {item.id}), days until expiry: {item.days_until_expiry}")
         
         # Get recent notifications
         notifications = notification_service.get_user_notifications(current_user.id, limit=5)
@@ -63,23 +70,11 @@ def inventory():
     
     # Update status for all items based on expiry date
     items = Item.query.filter_by(user_id=current_user.id).all()
-    current_date = datetime.now().date()  # Get current date once
+    current_app.logger.info(f"Found {len(items)} total items for user {current_user.id}")
     
     for item in items:
-        if item.expiry_date:
-            # Convert expiry_date to date if it's a datetime
-            expiry_date = item.expiry_date.date() if isinstance(item.expiry_date, datetime) else item.expiry_date
-            days_until_expiry = (expiry_date - current_date).days
-            if days_until_expiry < 0:
-                item.status = 'Expired'
-            elif days_until_expiry <= 30:
-                item.status = 'Expiring Soon'
-            else:
-                item.status = 'Active'
-        else:
-            item.status = 'Pending Expiry Date'
-    
-    db.session.commit()
+        item.update_status()
+        current_app.logger.info(f"Item {item.name} (ID: {item.id}): status={item.status}, expiry_date={item.expiry_date}, days_until_expiry={item.days_until_expiry}")
     
     # Get filter parameters
     status = request.args.get('status')
@@ -91,24 +86,27 @@ def inventory():
     # Apply status filter
     if status:
         if status == 'expiring_soon':
-            # Items expiring within 30 days
+            # Items expiring within 30 days but not expired
             query = query.filter(
                 Item.expiry_date.isnot(None),
                 Item.expiry_date > datetime.now().date(),
                 Item.expiry_date <= (datetime.now().date() + timedelta(days=30))
             )
+            current_app.logger.info("Filtering for expiring soon items")
         elif status == 'expired':
             # Items that have passed their expiry date
             query = query.filter(
                 Item.expiry_date.isnot(None),
                 Item.expiry_date <= datetime.now().date()
             )
+            current_app.logger.info("Filtering for expired items")
         elif status == 'active':
             # Items that are not expired and not expiring soon
             query = query.filter(
                 Item.expiry_date.isnot(None),
                 Item.expiry_date > (datetime.now().date() + timedelta(days=30))
             )
+            current_app.logger.info("Filtering for active items")
     
     # Apply search filter
     if search:
@@ -122,6 +120,16 @@ def inventory():
         )
     
     items = query.all()
+    current_app.logger.info(f"Inventory view counts - Total: {len(items)}, Status filter: {status}")
+    
+    # Update status for all items based on expiry date
+    for item in items:
+        item.update_status()
+    
+    # Log items by status
+    expired_count = len([item for item in items if item.status == 'Expired'])
+    expiring_count = len([item for item in items if item.status == 'Expiring Soon'])
+    current_app.logger.info(f"Inventory status counts - Expired: {expired_count}, Expiring Soon: {expiring_count}")
     
     # Get Zoho status for each item
     for item in items:
@@ -142,6 +150,20 @@ def notifications():
     notification_service = NotificationService()
     notifications = notification_service.get_user_notifications(current_user.id)
     return render_template('notifications.html', notifications=notifications)
+
+@main_bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """Mark a notification as read."""
+    notification_service = NotificationService()
+    success = notification_service.mark_notification_read(notification_id, current_user.id)
+    
+    if success:
+        flash('Notification marked as read', 'success')
+    else:
+        flash('Notification not found', 'error')
+    
+    return redirect(url_for('main.notifications'))
 
 @main_bp.route('/settings', methods=['GET', 'POST'])
 @login_required

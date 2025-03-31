@@ -40,13 +40,13 @@ class EmailService:
             return False
     
     @staticmethod
-    def send_password_reset_email(user: User, token: str):
+    def send_password_reset_email(email: str, token: str):
         """Send password reset email."""
         return EmailService.send_email(
             subject='Reset Your Password - Expiry Tracker',
-            recipients=[user.email],
+            recipients=[email],
             template='reset_password',
-            user=user,
+            email=email,
             token=token
         )
     
@@ -87,4 +87,28 @@ class EmailService:
             user=user,
             item_name=item_name,
             days_until_expiry=days_until_expiry
-        ) 
+        )
+
+    def send_password_reset_confirmation(self, email: str) -> bool:
+        """Send confirmation email after password reset."""
+        try:
+            current_app.logger.info(f"Sending password reset confirmation email to {email}")
+            
+            msg = Message(
+                'Password Reset Confirmation',
+                sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[email]
+            )
+            
+            msg.html = render_template(
+                'email/password_reset_confirmation.html',
+                email=email
+            )
+            
+            mail.send(msg)
+            current_app.logger.info(f"Successfully sent password reset confirmation email to {email}")
+            return True
+            
+        except Exception as e:
+            current_app.logger.error(f"Error sending password reset confirmation email: {str(e)}")
+            return False 

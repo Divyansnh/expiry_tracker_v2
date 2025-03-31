@@ -124,7 +124,7 @@ class ZohoService:
             if not zoho_items:
                 return False
 
-            # Get existing items from database
+            # Get existing items from database for this user only
             existing_items = Item.query.filter_by(user_id=user.id).all()
             existing_zoho_ids = {item.zoho_item_id for item in existing_items if item.zoho_item_id}
             
@@ -179,39 +179,41 @@ class ZohoService:
             for zoho_item in zoho_items:
                 zoho_item_id = zoho_item['item_id']
                 if zoho_item_id not in existing_zoho_ids:
-                    # Check if item already exists with this Zoho ID
+                    # Check if item already exists with this Zoho ID for any user
                     existing_item = Item.query.filter_by(zoho_item_id=zoho_item_id).first()
                     if existing_item:
-                        # Update existing item
-                        existing_item.name = zoho_item['name']
-                        existing_item.description = zoho_item.get('description', '')
-                        existing_item.unit = zoho_item.get('unit', '')
-                        existing_item.selling_price = float(zoho_item.get('rate', 0))
-                        existing_item.quantity = float(zoho_item.get('stock_on_hand', 0))
-                        
-                        # Handle Zoho status changes
-                        zoho_status = zoho_item.get('status', 'active')
-                        if zoho_status == 'inactive':
-                            existing_item.expiry_date = current_date
-                            existing_item.status = 'Expired'
-                        else:
-                            # If item is active in Zoho, only update expiry date if it exists in Zoho
-                            if 'expiry_date' in zoho_item:
-                                try:
-                                    existing_item.expiry_date = datetime.strptime(zoho_item['expiry_date'], '%Y-%m-%d').date()
-                                    # Update status based on expiry date
-                                    days_until_expiry = (existing_item.expiry_date - current_date).days
-                                    if days_until_expiry < 0:
-                                        existing_item.status = 'Expired'
-                                    elif days_until_expiry <= 30:
-                                        existing_item.status = 'Expiring Soon'
-                                    else:
-                                        existing_item.status = 'Active'
-                                except ValueError:
-                                    current_app.logger.warning(f"Invalid expiry date format for item {existing_item.id}: {zoho_item['expiry_date']}")
-                            # Don't change expiry date or status if not provided in Zoho
+                        # Only update if the item belongs to the current user
+                        if existing_item.user_id == user.id:
+                            # Update existing item
+                            existing_item.name = zoho_item['name']
+                            existing_item.description = zoho_item.get('description', '')
+                            existing_item.unit = zoho_item.get('unit', '')
+                            existing_item.selling_price = float(zoho_item.get('rate', 0))
+                            existing_item.quantity = float(zoho_item.get('stock_on_hand', 0))
+                            
+                            # Handle Zoho status changes
+                            zoho_status = zoho_item.get('status', 'active')
+                            if zoho_status == 'inactive':
+                                existing_item.expiry_date = current_date
+                                existing_item.status = 'Expired'
+                            else:
+                                # If item is active in Zoho, only update expiry date if it exists in Zoho
+                                if 'expiry_date' in zoho_item:
+                                    try:
+                                        existing_item.expiry_date = datetime.strptime(zoho_item['expiry_date'], '%Y-%m-%d').date()
+                                        # Update status based on expiry date
+                                        days_until_expiry = (existing_item.expiry_date - current_date).days
+                                        if days_until_expiry < 0:
+                                            existing_item.status = 'Expired'
+                                        elif days_until_expiry <= 30:
+                                            existing_item.status = 'Expiring Soon'
+                                        else:
+                                            existing_item.status = 'Active'
+                                    except ValueError:
+                                        current_app.logger.warning(f"Invalid expiry date format for item {existing_item.id}: {zoho_item['expiry_date']}")
+                                # Don't change expiry date or status if not provided in Zoho
                     else:
-                        # Create new item
+                        # Create new item for the current user only
                         item = Item(
                             name=zoho_item['name'],
                             description=zoho_item.get('description', ''),
@@ -219,7 +221,7 @@ class ZohoService:
                             unit=zoho_item.get('unit', ''),
                             selling_price=float(zoho_item.get('rate', 0)),
                             zoho_item_id=zoho_item_id,
-                            user_id=user.id
+                            user_id=user.id  # Explicitly set user_id to current user
                         )
                         
                         # Handle Zoho status and expiry date
@@ -608,4 +610,55 @@ class ZohoService:
             
         except Exception as e:
             current_app.logger.error(f"Error getting item status from Zoho: {str(e)}")
-            return None 
+            return None
+
+    def logout(self):
+        """Logout from Zoho and clear access token."""
+        try:
+            # Clear the access token from the session
+            if 'zoho_access_token' in session:
+                del session['zoho_access_token']
+            if 'zoho_refresh_token' in session:
+                del session['zoho_refresh_token']
+            if 'zoho_token_expiry' in session:
+                del session['zoho_token_expiry']
+            return True
+        except Exception as e:
+            current_app.logger.error(f"Error logging out from Zoho: {str(e)}")
+            return False
+
+    def update_item_status_in_zoho(self, zoho_item_id: str, status: str) -> bool:
+        """Update item status in Zoho."""
+        access_token = self.get_access_token()
+        if not access_token:
+            current_app.logger.error("No access token available")
+            return False
+            
+        try:
+            current_app.logger.info(f"Updating item {zoho_item_id} status to {status} in Zoho")
+            
+            response = requests.put(
+                f"{self.base_url}/items/{zoho_item_id}",
+                headers={
+                    'Authorization': f'Bearer {access_token}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'status': status
+                }
+            )
+            
+            if response.status_code == 200:
+                current_app.logger.info(f"Successfully updated item {zoho_item_id} status to {status}")
+                return True
+            elif response.status_code == 401:
+                current_app.logger.info("Token expired, attempting to refresh")
+                if self.refresh_token():
+                    return self.update_item_status_in_zoho(zoho_item_id, status)
+            
+            current_app.logger.error(f"Failed to update item status in Zoho: {response.status_code} - {response.text}")
+            return False
+            
+        except Exception as e:
+            current_app.logger.error(f"Error updating item status in Zoho: {str(e)}")
+            return False 
